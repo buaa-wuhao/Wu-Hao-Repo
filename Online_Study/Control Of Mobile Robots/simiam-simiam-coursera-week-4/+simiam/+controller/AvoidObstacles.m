@@ -79,14 +79,17 @@ classdef AvoidObstacles < simiam.controller.Controller
             
             n_sensors = length(robot.ir_array);
             sensor_gains = [1 1 1 1 1];
-            u_i = ir_distances_wf;
+            pos_of_robot = [x,x,x,x,x;y,y,y,y,y];
+            u_i = (ir_distances_wf-pos_of_robot)*(sensor_gains.');
             u_ao = sum(u_i,2);
-            
+            disp(u_ao);
             % Compute the heading and error for the PID controller
-            theta_ao = atan2(u_ao(2,1)/u_ao(1,1));
+            theta_ao = atan2(u_ao(2,1),u_ao(1,1));
+            
+            
             e_k = theta_ao-theta;
             e_k = atan2(sin(e_k),cos(e_k));
-            
+
             %% END CODE BLOCK %%
                                     
             e_P = e_k;
@@ -130,7 +133,7 @@ classdef AvoidObstacles < simiam.controller.Controller
             % Apply the transformation to robot frame.
             
             ir_distances_rf = [ir_distances.';0,0,0,0,0;1,1,1,1,1];
-            %disp(ir_distances_rf);
+
             for i=1:n_sensors
                 x_s = obj.sensor_placement(1,i);
                 y_s = obj.sensor_placement(2,i);
@@ -139,7 +142,8 @@ classdef AvoidObstacles < simiam.controller.Controller
                 R = obj.get_transformation_matrix(x_s,y_s,theta_s);
                 ir_distances_rf(:,i) = R*ir_distances_rf(:,i);
             end
-            
+            disp("ir_distances_rf:");
+            disp(ir_distances_rf);            
             % Apply the transformation to world frame.
             
             [x,y,theta] = state_estimate.unpack();
@@ -150,6 +154,8 @@ classdef AvoidObstacles < simiam.controller.Controller
             %% END CODE BLOCK %%
             
             ir_distances_wf = ir_distances_wf(1:2,:);
+            disp("ir_distances_wf:");
+            disp(ir_distances_wf);           
         end
         
         
