@@ -67,7 +67,8 @@ classdef AvoidObstacles < simiam.controller.Controller
             
             % Poll the current IR sensor values 1-5
             ir_distances = robot.get_ir_distances();           
-            
+            %disp('ir distances:');
+            %disp(size(ir_distances));
                         
             % Interpret the IR sensor measurements geometrically
             ir_distances_wf = obj.apply_sensor_geometry(ir_distances, state_estimate);            
@@ -78,12 +79,12 @@ classdef AvoidObstacles < simiam.controller.Controller
             
             n_sensors = length(robot.ir_array);
             sensor_gains = [1 1 1 1 1];
-            u_i = zeros(2,5);
+            u_i = ir_distances_wf;
             u_ao = sum(u_i,2);
             
             % Compute the heading and error for the PID controller
-            theta_ao = 0;
-            e_k = 0;
+            theta_ao = atan2(u_ao(2,1)/u_ao(1,1));
+            e_k = theta_ao-theta;
             e_k = atan2(sin(e_k),cos(e_k));
             
             %% END CODE BLOCK %%
@@ -128,22 +129,23 @@ classdef AvoidObstacles < simiam.controller.Controller
             
             % Apply the transformation to robot frame.
             
-            ir_distances_rf = zeros(3,n_sensors);
+            ir_distances_rf = [ir_distances.';0,0,0,0,0;1,1,1,1,1];
+            %disp(ir_distances_rf);
             for i=1:n_sensors
                 x_s = obj.sensor_placement(1,i);
                 y_s = obj.sensor_placement(2,i);
                 theta_s = obj.sensor_placement(3,i);
                 
                 R = obj.get_transformation_matrix(x_s,y_s,theta_s);
-                ir_distances_rf(:,i) = zeros(3,1);
+                ir_distances_rf(:,i) = R*ir_distances_rf(:,i);
             end
             
             % Apply the transformation to world frame.
             
             [x,y,theta] = state_estimate.unpack();
             
-            R = obj.get_transformation_matrix(0,0,0);
-            ir_distances_wf = zeros(3,5);
+            R = obj.get_transformation_matrix(x,y,theta);
+            ir_distances_wf = R*ir_distances_rf;
             
             %% END CODE BLOCK %%
             
