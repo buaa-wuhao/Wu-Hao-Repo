@@ -6,14 +6,11 @@ int main(int argc, char* argv[])
 	TextQuery tq(input);
 	string word;
 
-	while((cin>>word) || word!="q")
+	while((cin>>word) && word!="q")
 	{
-            QueryResult qr = tq.Query(word);
-	    for(int i=0;i<qr.rows->size();i++)
-	    {
-		cout<< *(qr.lines->begin()+ *(qr.rows->begin()+i)) << endl;
-	    }
-	}	
+	    QueryResult qr = tq.Query(word);
+	    print(cout,qr);
+        }	
 	
 	return 0;
 }
