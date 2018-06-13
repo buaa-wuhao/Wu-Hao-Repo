@@ -10,6 +10,8 @@ using namespace std;
 
 class QueryResult
 {
+	friend void print(ostream&,QueryResult&);	
+	
 	private:
               shared_ptr<vector<string>> lines;
 	      shared_ptr<vector<int>>    rows;
