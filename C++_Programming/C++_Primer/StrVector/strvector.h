@@ -6,20 +6,29 @@
 class strvector{
 	public:
 		strvector():element(nullptr),first_free(nullptr),cap(nullptr){}
-		strvector(const strvector& strvec);
-		strvector& operator=(const strvector& strvec);
-		size_t size() const {return first_free - element}
-		size_t capacity const {return cap - element}
+		strvector(const strvector& );
+		strvector& operator=(const strvector&);
+		void push_back(const string&);
+		size_t size() const {return first_free - element;}
+		size_t capacity const {return cap - element;}
+		std::string* begin() const {return element;}
+		std::string* end()  const  {return first_free;}
+		~strvector();
+		
 
 	private:
-		allocator<std::string> alloc;
+		static std::allocator<std::string> alloc;
 		std::string*           element;
 		std::string*           first_free;
 		std::string*           cap;
+		void free();
+		void check_n_alloc();
+		void reallocate();
+		pair<string*,string*> alloc_n_copy(const string* b, const string* e);
 
 };
 
-
+ 
 
 
 
