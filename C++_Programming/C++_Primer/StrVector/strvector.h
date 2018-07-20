@@ -13,6 +13,7 @@ class strvector{
 		size_t capacity const {return cap - element;}
 		std::string* begin() const {return element;}
 		std::string* end()  const  {return first_free;}
+		void resize(size_t sz);
 		~strvector();
 		
 
