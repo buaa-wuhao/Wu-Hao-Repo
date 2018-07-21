@@ -5,6 +5,13 @@ using namespace std;
 
 allocator<string> strvector::alloc;
 
+void strvector::reserve(size_t sz)
+{
+	while(sz > capacity())
+	{
+		reallocate();
+	}
+}
 
 void strvector::resize(size_t sz)
 {
@@ -48,6 +55,13 @@ strvector::~strvector()
 	free();
 }
 
+strvector::strvector(initializer_list<string> str_list)
+{	
+	auto data = alloc_n_copy(str_list.begin(),str_list.end());
+	element = data.first;
+	first_free = cap = data.second;
+}
+
 strvector::strvector(const strvector& s)
 {
 	auto data = alloc_n_copy(s.begin(),s.end());
@@ -87,10 +101,19 @@ void free()
 {
 	if(element)
 	{	
+		for_each(element,first_free,[](const string& str){alloc.destroy(&str);})
+		alloc.deallocate(element,cap-element);
+	}
+}
+/*
+void free()
+{
+	if(element)
+	{	
 		for(auto it=first_free;it!=element;)
 		{
 			alloc.destroy(--it);
 		}
 		alloc.deallocate(element,cap-element);
 	}
-}
+}*/

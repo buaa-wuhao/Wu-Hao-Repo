@@ -7,6 +7,7 @@ class strvector{
 	public:
 		strvector():element(nullptr),first_free(nullptr),cap(nullptr){}
 		strvector(const strvector& );
+		strvector(initializer_list<string>);
 		strvector& operator=(const strvector&);
 		void push_back(const string&);
 		size_t size() const {return first_free - element;}
@@ -14,6 +15,7 @@ class strvector{
 		std::string* begin() const {return element;}
 		std::string* end()  const  {return first_free;}
 		void resize(size_t sz);
+		void reserve(size_t sz);
 		~strvector();
 		
 
