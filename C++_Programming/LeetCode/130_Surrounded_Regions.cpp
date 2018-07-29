@@ -61,7 +61,6 @@ public:
 };
 
 
-
 class UF
 {
   private:
@@ -72,6 +71,7 @@ class UF
     UF(int n)
     {
         id.resize(n,0);
+        weight.resize(n,0);
         cnt = n;
         for(int i=0;i<n;i++)
         {
@@ -123,9 +123,10 @@ public:
             {
                 if(board[i][j]=='X') continue;
                 
-                if(board[i][j]=='O' && (i==0 || i==m || j==0 || j==n))
+                if(board[i][j]=='O' && (i==0 || i==m-1 || j==0 || j==n-1))
                 {
-                    uf._union(i*n+j,m*n+1);
+                   // cout<<i<<" "<<j<<endl;
+                    uf._union(i*n+j,m*n);
                     continue;
                 }
                 
@@ -135,8 +136,8 @@ public:
                     int new_y = j + mv[k].second;
                     if(new_x<0 || new_y<0 || new_x >=m || new_y>=n) continue;
                     if(board[new_x][new_y]=='X') continue;
-                    if(uf.connected(i*m+j,new_x*m+new_y)==true) continue;
-                    uf._union(i*m+j,new_x*m+new_y);
+                    if(uf.connected(i*n+j,new_x*n+new_y)==true) continue;
+                    uf._union(i*n+j,new_x*n+new_y);
                 }
             }
         }
@@ -145,7 +146,7 @@ public:
         {
             for(int j=0;j<n;j++)
             {
-                if(board[i][j]=='O' && !uf.connected(i*m+j,m*n+1)) board[i][j]='X';
+                if(board[i][j]=='O' && !uf.connected(i*n+j,m*n)) board[i][j]='X';
             }
         }
         return;
