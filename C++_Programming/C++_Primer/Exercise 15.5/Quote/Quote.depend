@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1536639392 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\exercise 15.5\quote\main.cpp
+	"Quote.h"
+	<iostream>
+
+1536642335 c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\exercise 15.5\quote\quote.h
+	<string>
+	<iostream>
+

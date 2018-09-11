@@ -29,6 +29,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="SparseMatrix.cpp" />
 		<Unit filename="SparseMatrix.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
