@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1540787876 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\main.c
+	<stdio.h>
+	<stdlib.h>
+
