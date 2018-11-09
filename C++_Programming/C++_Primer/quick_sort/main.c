@@ -3,7 +3,9 @@
 #ifndef STACK_H_INCLUDED
 #include "stack.h"
 #endif // STACK_H_INCLUDED
-
+//#ifndef MERGE_H_INCLUDED
+//#include "merge.h"
+//#endif // MERGE_H_INCLUDED
 #define exch(A,B) {int t = A; A = B; B=t;}
 void swap(int* x,int* y)
 {
@@ -36,19 +38,20 @@ void quickSort(int a[],int l,int r)
     quickSort(a,i+1,r);
     return;
 }*/
-
+/*
 void quickSort(int a[],int l,int r)
 {
     int sz = r - l + 1;
     stackInit(sz);
-    stackPush(r);
     stackPush(l);
+    stackPush(r);
+
 
     while(!isStackEmpty())
     {//printf("Hello world!\n");
         int right = stackPop();
         int left  = stackPop();
-        printf("\n (%d,%d) \n",left,right);
+        //printf("\n (%d,%d) \n",left,right);
         if(left>=right) continue;
         int i = partition(a,left,right);
 
@@ -65,19 +68,51 @@ void quickSort(int a[],int l,int r)
     }
     return;
 }
+*/
+void merge(int a[],int aux[],int l,int m,int r)
+{
+	int i,j;
+	int num = r-l+1;
+	//int* aux = malloc(sizeof(int)*num);
+    //printf("%d,\n",num);
+	for(i=l;i<=m;i++) aux[i] = a[i];
+	for(j=r;j>m; j--) aux[r-j+m+1]  = a[j];
+
+	i =l;j=r;
+	for(int k=l;k<=r;k++)
+	{
+		if(aux[i]>aux[j]) a[k] = aux[j--];
+		else              a[k] = aux[i++];
+	}
+	//free(aux);
+	return;
+}
+
+void mergeSort(int a[],int aux[],int l,int r)
+{
+	int mid;
+	if(l>=r) return;
+	mid = l + (r-l)/2;
+	mergeSort(a,aux,l,mid);
+	mergeSort(a,aux,mid+1,r);
+	merge(a,aux,l,mid,r);
+}
+
 
 #define N 19
 int main()
 {
 
-    int a[N];
+    int a[N],aux[N];
     for(int i=0;i<N;i++)
     {
         a[i] = rand()%100;
-       // printf("%d, ",a[i]);
+        printf("%d, ",a[i]);
     }
-
-    quickSort(a,0,N-1);
+ printf("Hello world!\n");
+    //mergeInit(N);
+    mergeSort(a,aux,0,N-1);
+   // quickSort(a,0,N-1);
 
     for(int i=0;i<N;i++)
     {

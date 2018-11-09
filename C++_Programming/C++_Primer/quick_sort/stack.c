@@ -28,6 +28,6 @@ void stackPush(int x)
 
 int stackPop()
 {
-    int rtn = stack[N--];
+    int rtn = stack[--N];
     return rtn;
 }

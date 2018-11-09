@@ -1,9 +1,20 @@
 # depslib dependency file v1.0
-1540873622 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\main.c
+1541223147 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\main.c
 	<stdio.h>
 	<stdlib.h>
+	"stack.h"
 
-1540878371 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\stack.c
+1540957439 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\stack.c
 	<stdlib.h>
 	<stdbool.h>
+
+1540878527 c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\stack.h
+	<stdbool.h>
+
+1541223173 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\merge.c
+	"merge.h"
+
+1540962792 c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\quick_sort\merge.h
+	<stdlib.h>
+	<stdio.h>
 
