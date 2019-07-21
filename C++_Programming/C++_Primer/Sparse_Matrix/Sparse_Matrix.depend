@@ -1,0 +1,14 @@
+# depslib dependency file v1.0
+1535521207 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\sparse_matrix\main.cpp
+	"SparseMatrix.h"
+	<iostream>
+
+1535521140 c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\sparse_matrix\sparsematrix.h
+	<tuple>
+	<vector>
+
+1535521118 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\sparse_matrix\sparsematrix.cpp
+	"SparseMatrix.h"
+	<algorithm>
+	<iostream>
+

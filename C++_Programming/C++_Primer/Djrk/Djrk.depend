@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1535310118 source:c:\users\wuhao\documents\github\wu-hao-repo\c++_programming\c++_primer\djrk\main.cpp
+	<cstring>
+	<cstdio>
+	<vector>
+	<queue>
+

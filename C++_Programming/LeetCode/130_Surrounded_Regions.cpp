@@ -59,3 +59,96 @@ public:
         return;
     }
 };
+
+
+class UF
+{
+  private:
+    vector<int> id;
+    vector<int> weight;
+    int cnt;
+  public:
+    UF(int n)
+    {
+        id.resize(n,0);
+        weight.resize(n,0);
+        cnt = n;
+        for(int i=0;i<n;i++)
+        {
+            id[i] = i;
+            weight[i]=1;
+        }
+    }
+    int find(int i)
+    {
+        while(id[i]!=i) i = id[i];
+        return i;
+    }
+    bool connected(int i,int j)
+    {
+        return (find(i)==find(j));
+    }
+    void _union(int i,int j)
+    {
+        int i_f = find(i);
+        int j_f = find(j);
+        if(weight[i_f] > weight[j_f])
+        {
+            id[j_f]=i_f;
+            weight[i_f] += weight[j_f];
+        }
+        else
+        {
+            id[i_f] = j_f;
+            weight[j_f]+= weight[i_f];
+        }
+        cnt--;
+        return;
+    }
+};
+
+class Solution {
+public:
+    void solve(vector<vector<char>>& board) {
+        if(board.empty() || board[0].empty()) return ;
+        int m = board.size();
+        int n = board[0].size();
+        
+        UF uf(m*n+1);
+        vector<pair<int,int>> mv = {{0,1},{0,-1},{1,0},{-1,0}};
+        
+        for(int i=0;i<m;i++)
+        {
+            for(int j=0;j<n;j++)
+            {
+                if(board[i][j]=='X') continue;
+                
+                if(board[i][j]=='O' && (i==0 || i==m-1 || j==0 || j==n-1))
+                {
+                   // cout<<i<<" "<<j<<endl;
+                    uf._union(i*n+j,m*n);
+                    continue;
+                }
+                
+                for(int k=0;k<mv.size();k++)
+                {
+                    int new_x = i + mv[k].first;
+                    int new_y = j + mv[k].second;
+                    if(new_x<0 || new_y<0 || new_x >=m || new_y>=n) continue;
+                    if(board[new_x][new_y]=='X') continue;
+                    if(uf.connected(i*n+j,new_x*n+new_y)==true) continue;
+                    uf._union(i*n+j,new_x*n+new_y);
+                }
+            }
+        }
+        
+        for(int i=0;i<m;i++)
+        {
+            for(int j=0;j<n;j++)
+            {
+                if(board[i][j]=='O' && !uf.connected(i*n+j,m*n)) board[i][j]='X';
+            }
+        }
+        return;
+    }
+};
