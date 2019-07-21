@@ -15,11 +15,18 @@ class sales_data
 	double revenue = 0;
 	
 	public:
-	sales_data():bookNO(""),unitsSold(0),revenue(0){}
-	sales_data(const string& isbn):bookNO(isbn) {}
-	sales_data(const string& isbn,unsigned no,double p):bookNO(isbn),unitsSold(no),revenue(p*no) {}
-	sales_data(istream& is){ read(is,(*this));}
-
+	// sales_data():bookNO(""),unitsSold(0),revenue(0){}
+	// sales_data(const string& isbn):bookNO(isbn) {}
+	// sales_data(const string& isbn,unsigned no,double p):bookNO(isbn),unitsSold(no),revenue(p*no) {}
+	// sales_data(istream& is){ read(is,(*this));}
+	sales_data(string s,int us,double rev):bookNO(s),unitsSold(us),revenue(rev) {cout<<"sales_data(string s,int us,double rev)"<<endl;}
+	sales_data():sales_data("",0,0) {cout<<"sales_data()"<<endl;}
+	sales_data(string s):sales_data(s,0,0) {cout<<"sales_data(string s)"<<endl;}
+	sales_data(istream& is):sales_data() 
+	{
+		read(is,(*this));
+		cout<<"sales_data(istream& is)"<< endl;
+	}
 	string isbn() const {return bookNO;}
 	sales_data& combine(const sales_data& rhs);
 };
@@ -54,16 +61,13 @@ sales_data& sales_data::combine(const sales_data& rhs)
 
 int main()
 {
-	sales_data sd;
-	sales_data sd1("1234");
-	sales_data sd2("1234",2,5);
+	sales_data sd("1234",0,1);
+	sales_data sd1;
+	sales_data sd2("2345");
 	sales_data sd3(cin);
-	print(cout,sd);
-	print(cout,sd1);
-	print(cout,sd2);
-	print(cout,sd3);
-	cout<<sd1.bookNO << "wuhao" << endl;
-	sales_data total(cin);
+
+	//cout<<sd1.bookNO << "wuhao" << endl;
+	//sales_data total(cin);
 
 /*	
 	if(!total.bookNO.empty())
