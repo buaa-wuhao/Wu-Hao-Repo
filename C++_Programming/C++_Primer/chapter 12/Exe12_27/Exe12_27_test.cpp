@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <memory>
+#include "exe13_39.hpp"
 
 using namespace std;
 
@@ -16,7 +17,8 @@ class TextQuery{
 		TextQuery(ifstream& input);
 		QueryResult query(string& s);
 	private:
-		shared_ptr<vector<string>> 				               _lines;
+		//shared_ptr<vector<string>> 				               _lines;
+		shared_ptr<strVec> 				               		   _lines;
 		unordered_map<string,shared_ptr<set<int>>>             _hash;
 
 
@@ -25,13 +27,13 @@ class TextQuery{
 class QueryResult{
 	friend ostream& print(ostream& os, QueryResult qr);
 	public:
-		QueryResult(string s,shared_ptr<vector<string>> lines,shared_ptr<set<int>> hash):sought(s),_lines(lines),_hash(hash) {}
-		shared_ptr<vector<string>> get_file() {return _lines;}
+		QueryResult(string s,shared_ptr<strVec> lines,shared_ptr<set<int>> hash):sought(s),_lines(lines),_hash(hash) {}
+		shared_ptr<strVec> get_file() {return _lines;}
 		set<int>::iterator begin() {return _hash->begin();}
 		set<int>::iterator end()   {return _hash->end();} 
 	private:
 		string sought;
-		shared_ptr<vector<string>> _lines;
+		shared_ptr<strVec> 		   _lines;
 		shared_ptr<set<int>>       _hash;
 };
 
@@ -48,7 +50,7 @@ QueryResult TextQuery::query(string& s)
 	}
 }
 
-TextQuery::TextQuery(ifstream& input):_lines(new vector<string>)
+TextQuery::TextQuery(ifstream& input):_lines(new strVec)
 {
 	string line;
 	while(getline(input,line))

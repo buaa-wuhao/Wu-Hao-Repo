@@ -1,34 +1,46 @@
-#include <string>
-#include <memory>
-#include <utility>
-
-class strVec
-{
-
-public:
-	strVec():element(nullptr),firstFree(nullptr),cap(nullptr) {}
-	strVec(const strVec&);
-	strVec& operator=(const strVec&);
-	std::string* begin() const {return element;}
-	std::string* end()   const {return firstFree;}
-	~strVec() {free();}
-	void push_back(std::string str);
-	size_t size() const {return (firstFree - element);}
-
-private:
-	static std::allocator<std::string> alloc;
-	std::string* element;
-	std::string* firstFree;
-	std::string* cap;
-	bool isFull() {return (firstFree==cap);}
-	void free();
-	void reallocate();
-	std::pair<std::string*,std::string*> copy_n_chk(const strVec& strvec); 
-};
+#include "exe13_39.hpp"
 
 
 std::allocator<std::string> strVec::alloc;
 
+void  strVec::resize(size_t n,const std::string& val)
+{
+	if(n==size()) return;
+	
+	if(n < size())
+	{
+		for(; firstFree!=element+n;)
+		{
+			alloc.destroy(--firstFree);
+		}
+		return;
+	}
+	
+	if(n > capacity()) reserve(n);
+	
+	for(;firstFree!=element+n;)
+	{	
+		alloc.construct(firstFree++,val);
+	}
+	return;
+}
+
+void strVec::reserve(size_t n)
+{
+	if(n <= capacity()) return;
+	std::string* new_element = alloc.allocate(n);
+	std::string* new_firstFree = new_element;
+	std::string* ptr = element;
+	for(int i=0;i<size();i++)
+	{
+		alloc.construct(new_firstFree++,std::move(*ptr++));
+	}
+	free();
+	element = new_element;
+	firstFree = new_firstFree;
+	cap = element + n;
+	return;
+}
 
 std::pair<std::string*,std::string*> strVec::copy_n_chk(const strVec& strvec)
 {
@@ -37,6 +49,17 @@ std::pair<std::string*,std::string*> strVec::copy_n_chk(const strVec& strvec)
 	std::uninitialized_copy_n(strvec.element,sz,element);
 	return std::make_pair(element,element+sz);
 } 
+
+strVec::strVec(std::initializer_list<std::string> list)
+{
+	size_t sz = list.size();
+	firstFree = element = alloc.allocate(sz);
+	for(auto it:list)
+	{
+		alloc.construct(firstFree++,it);
+	}
+	cap = firstFree;
+}
 
 strVec::strVec(const strVec& strvec)
 {
@@ -57,11 +80,12 @@ strVec& strVec::operator=(const strVec& strvec)
 void strVec::free()
 {
 	if(!element) return;
-	for(std::string *ptr=firstFree; ptr!=element ;)
-	{
-		alloc.destroy(--ptr);
-	}
-	alloc.deallocate(element,firstFree-element);
+	// for(std::string *ptr=firstFree; ptr!=element ;)
+	// {
+	// 	alloc.destroy(--ptr);
+	// }
+	std::for_each(element,firstFree,[](std::string& p){alloc.destroy(&p);});
+	alloc.deallocate(element,cap-element);
 }
 
 void strVec::push_back(std::string str)
@@ -89,8 +113,8 @@ void strVec::reallocate()
 }
 
 
-int main()
-{
-	strVec s;
-	return 0;
-}
+// int main()
+// {
+// 	strVec s;
+// 	return 0;
+// }
