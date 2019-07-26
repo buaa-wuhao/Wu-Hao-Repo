@@ -1,0 +1,24 @@
+Copy
+Copy
+assign 
+Copy
+hello
+hello
+temporary
+temporary
+Copy
+Copy
+Copy
+Copy
+Copy
+Copy
+String::String(String&& str)
+String::String(String&& str)
+
+hello
+hello
+hello
+world
+world
+world
+good job
