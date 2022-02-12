@@ -19,6 +19,7 @@
 #include "shared_ptr1.h"
 #include "my_allocator.h"
 #include "singleton.h"
+#include "taskScheduler.h"
 class myAllocator{
 	using Integer = size_t;
 	private:
@@ -245,11 +246,13 @@ string reverse_sentence(const string& s){
 	return word;
 }
 int main(int argc, char** argv) {
+
+  taskScheduler task_scheduler;
   std::string who = "hi, I am Hao!";
   if (argc > 1) {
     who = argv[1];
   }
-  my_allocator* p_alloc = singleton<my_allocator>::instance();
+  //my_allocator* p_alloc = singleton<my_allocator>::instance();
   my_allocator alloc(10,30);
   //cout<<"my__allocator?"<<endl;
   char* ptr = (char*)alloc.allocate(25);

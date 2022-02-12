@@ -6,8 +6,8 @@ class singleton{
 		singleton(singleton&&) = delete;
 		singleton& operator=(const singleton&) = delete;
 		singleton& operator=(singleton&&) = delete;
-		static T* instance());
-		std::mutex mtx;
+		static T* instance();
+		static std::mutex mtx;
 	private:
 		static T* ptr_T;
 		singleton()=default;
@@ -16,6 +16,9 @@ class singleton{
 
 template<typename T>
 T* singleton<T>::ptr_T = nullptr;
+
+template<typename T>
+std::mutex singleton<T>::mtx;
 
 template<typename T>
 T* singleton<T>::instance(){

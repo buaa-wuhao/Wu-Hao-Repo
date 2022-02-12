@@ -9,7 +9,7 @@ cc_library(
 cc_binary(
     name = "hello-world",
     srcs = ["hello-world.cc","SharedPtr.h","String.h","String.cc","priority_queue.h","matrix.h","text_query.h","Query.h",
-    "Find.h","shared_ptr1.h","my_allocator.h","singleton.h"],
+    "Find.h","shared_ptr1.h","my_allocator.h","singleton.h","taskScheduler.h"],
     linkopts=["-lpthread"],
     deps = [
         ":hello-greet",
