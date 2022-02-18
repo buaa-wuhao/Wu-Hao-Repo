@@ -156,7 +156,88 @@ class priorityQueue{
                     return data.size();
                 }
 };
+class Allocator{
+    private:
+        const size_t page_size = 1024;
+        static Header* free_list; 
+        static Header base; 
+        Header* morecore(size_t sz){
+            if(sz<page_size) 
+              sz = page_size;
+            char* new_p = new char [sz*sizeof(Header)];
+            if(new_p==nullptr) return nullptr;
+            Header* up = (Header*) new_p;
+            up->size = sz;
+            free((void*)(up+1));
+            return free_list;
+        }
+    public:
+      void* allocate(size_t nbytes){
+          size_t sz = (nbytes + sizeof(Header) - 1)/sizeof(Header) + 1; 
+          Header *prv,*cur;
+          if((prv=free_list)==nullptr)
+          {
+              base.next = prv = free_list = &base; 
+              base.size = 0;
+          }
+          
+          for(cur=prv->next;;prv=cur,cur=cur->next)
+          {
+              if(cur->size >= sz){
+                if(cur->size==sz){
+                    prv->next = cur->next;  
+                }
+                else{
+                    cur->size -= sz; 
+                    cur += cur->size;
+                    cur->size = sz; 
+                }
+                free_list = prv;
+                return (void*)(cur+1);
+              } 
+              if(cur==free_list){
+                   cur = morecore(sz); 
+                   if(cur==nullptr)  
+                     return nullptr;
+              }
+          }
+          return nullptr;
+      } 
+      void  free(void* ptr){
+            Header* bp = (Header*) ptr; 
+            bp--;
+            Header* p; 
+            for(p=free_list;!(bp>p && bp<p->next);p=p->next)
+            {
+                if(p>p->next && (bp>p || bp<p->next)){
+                    break; 
+                } 
+            }
+            if(bp+bp->size == p->next){
+                bp->size += p->next->size;
+                bp->next = p->next->next;
+            }
+            else{
+                bp->next = p->next; 
+            }
+            
+            if(p+p->size == bp){
+                p->size += bp->size; 
+                p->next = bp->next;
+            }
+            else{
+                p->next = bp; 
+            }
+            free_list = p;
+            return;
+      }
+      ~Allocator(){
+         
+      }
 
+};
+Header* Allocator::free_list = nullptr;
+Header  Allocator::base;
 class debugDelete{
     public:
     template<typename T>
