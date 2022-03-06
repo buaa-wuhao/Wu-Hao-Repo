@@ -3,9 +3,8 @@
 #
 /bin/echo -e tsh> ./myspin 4 \046
 ./myspin 4 &
-
-/bin/echo -e tsh> ./myspin 5
-./myspin 5 
+/bin/echo -e tsh> ./myspin 15
+./myspin 15 
 
 SLEEP 2
 TSTP

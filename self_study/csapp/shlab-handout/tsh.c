@@ -40,6 +40,7 @@ char prompt[] = "tsh> ";    /* command line prompt (DO NOT CHANGE) */
 int verbose = 0;            /* if true, print additional output */
 int nextjid = 1;            /* next job ID to allocate */
 char sbuf[MAXLINE];         /* for composing sprintf messages */
+int  bg;                    /*if it is background command,1:background,0:foreground*/
 
 struct job_t {              /* The job struct */
     pid_t pid;              /* job PID */
@@ -56,7 +57,7 @@ volatile sig_atomic_t signal_received;
 /* Here are the functions that you will implement */
 void eval(char *cmdline);
 int builtin_cmd(char **argv);
-void do_bgfg(char **argv);
+int do_bgfg(char **argv);
 void waitfg(pid_t pid);
 
 void sigchld_handler(int sig);
@@ -144,8 +145,11 @@ int main(int argc, char **argv)
 
 	/* Evaluate the command line */
 	eval(cmdline);
+    //printf("After cmdline\n");
 	fflush(stdout);
-	fflush(stdout);
+  //  printf("After fflush(stdout)\n");
+  	fflush(stdout);
+   // printf("child pid: %d\n",child_pid);
     } 
 
     exit(0); /* control never reaches here */
@@ -166,13 +170,15 @@ void eval(char *cmdline)
 {
     char *argv[MAXARGS];
     char buf[MAXLINE];
-    int bg,is_builtin_cmd;
+    int  is_builtin_cmd;
     pid_t pid;
     sigset_t mask_all,mask_one,prev_one;
 
     sigfillset(&mask_all);
     sigemptyset(&mask_one);
     sigaddset(&mask_one,SIGCHLD);
+    //sigaddset(&mask_one,SIGTSTP);
+    //sigaddset(&mask_one,SIGINT);
 
     strcpy(buf,cmdline);
     bg = parseline(buf,argv);
@@ -190,28 +196,35 @@ void eval(char *cmdline)
                 exit(0);
             }
         }
-
+        //printf("a new pid is generated:%d\n",pid);
         int job_state = (bg?BG:FG);
-        sigprocmask(SIG_BLOCK,&mask_all,NULL);
+        //sigprocmask(SIG_BLOCK,&mask_all,NULL);
         addjob(&jobs,pid,job_state,cmdline);
         sigprocmask(SIG_SETMASK,&prev_one,NULL);
-        
     }
     /*fore ground and not built in command*/
     if(!bg){
-        if(!is_builtin_cmd){
+        //printf("is builtin cmd?: %d\n",is_builtin_cmd);
+        // non-builtin command or "fg" command
+        if(is_builtin_cmd==0 || is_builtin_cmd==2){
+            sigprocmask(SIG_BLOCK,&mask_one,&prev_one);
             child_pid = 0;        
             while(!child_pid)
+            {
+                //printf("Loop forever!\n");
                 sigsuspend(&prev_one);
+            }
+            sigprocmask(SIG_SETMASK,&prev_one,NULL);
             switch(signal_received)
             {
                 case SIGINT:
                     printf("Job [%d] (%d) terminated by signal 2\n",pid2jid(child_pid),child_pid);
                     break;
                 case SIGTSTP:
-                    printf("Job [%d] (%d) terminated by signal 20\n",pid2jid(child_pid),child_pid);
+                    printf("Job [%d] (%d) stopped by signal 20\n",pid2jid(child_pid),child_pid);
                     break;
                 default:
+            //        printf("unknown signal received:[%d],its sending pid is: [%d]\n",signal_received,child_pid);
                     break;
             }
             signal_received = 0;
@@ -219,7 +232,11 @@ void eval(char *cmdline)
     }
     else
     {
-        printf("[%d] (%d) %s",pid2jid(pid),pid,cmdline);
+        //printf("bg\n");
+        //if it is not command "bg" then we print out jobID,pid and command line
+        //otherwise stay quite.Based on behavior of "tshref"
+        if(is_builtin_cmd!=3)
+            printf("[%d] (%d) %s",pid2jid(pid),pid,cmdline);
     }
     return;
 }
@@ -284,6 +301,11 @@ int parseline(const char *cmdline, char **argv)
 /* 
  * builtin_cmd - If the user has typed a built-in command then execute
  *    it immediately.  
+ * rtn 0: non-builtin command
+ * rtn 1: non-bg/fg builtin command 
+ * rtn 2: fg builtin command
+ * rtn 3: bg builtin command
+ * rtn 4: invalid fg/bg command such as "fg a"
  */
 int builtin_cmd(char **argv) 
 {
@@ -294,9 +316,19 @@ int builtin_cmd(char **argv)
         return 1;
     }
     if(!strcmp(argv[0],"bg") || !strcmp(argv[0],"fg")){
-        do_bgfg(argv);
-        printf("bg command\n");
-        return 1;
+        //invalid bg/fg command
+        if(do_bgfg(argv)==0)
+        {
+            return 4;
+        }
+        //printf("bg command\n");
+        //return 2;
+    }
+    if(!strcmp(argv[0],"fg")){
+        return 2;
+    }
+    if(!strcmp(argv[0],"bg")) {
+        return 3;
     }
 
     return 0;     /* not a builtin command */
@@ -304,13 +336,16 @@ int builtin_cmd(char **argv)
 
 /* 
  * do_bgfg - Execute the builtin bg and fg commands
+ * return 1:valid fg/bg command
+ * return 0:invalid fg/bg command
  */
-void do_bgfg(char **argv) 
+int do_bgfg(char **argv) 
 {
     int job_id;
-    if(argv[1]==NULL) {
-        printf("%s command requires PID of % job id argument\n",argv[0]);
-        return;
+    if(argv[1]==NULL || (argv[1][0]!='%' && !(argv[1][0]>'0' && argv[1][0]<='9'))) {
+        //to eascape % in printf function,use another %
+        printf("%s command requires PID or %%jobid argument\n",argv[0]);
+        return 0;
     }
     if(argv[1][0]!='%')
         job_id = pid2jid(atoi(argv[1]));
@@ -319,26 +354,32 @@ void do_bgfg(char **argv)
     
     struct job_t* ptr_job = getjobjid(&jobs,job_id);
     if(ptr_job==NULL)
-        printf("%s : No such job\n",argv[1]);
-    
+    {
+        printf("%s : No such job or process\n",argv[1]);
+        return 0;
+    }
 
     if(!strcmp(argv[0],"fg"))
     {
        if(ptr_job->state==ST) 
        {
-           //send SIGCONT signal
-           kill(ptr_job->pid,SIGCONT);
+           //send SIGCONT signal to all process in that group.
+           //incase ./mysplit 50 command, will create an grand child in same process group
+           kill(-ptr_job->pid,SIGCONT);
        }
        ptr_job->state = FG;
-       waitfg(ptr_job->pid);
+       //waitfg(ptr_job->pid);
+       bg = 0;
     }
 
     if(!strcmp(argv[0],"bg"))
     {
         ptr_job->state = BG;
-        kill(ptr_job->pid,SIGCONT);
+        kill(-ptr_job->pid,SIGCONT);
+        bg = 1;
+        printf("[%d] (%d) %s",pid2jid(ptr_job->pid),ptr_job->pid,ptr_job->cmdline);
     }
-    return;
+    return 1;
 }
 
 /* 
@@ -366,16 +407,21 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 {
-    int olderrno = errno;
+    int olderrno = errno,status;
     sigset_t mask_all, prev_all;
     signal_received = sig;
     sigfillset(&mask_all);
-    if((child_pid = waitpid(-1,NULL,0))>0){
-        //Reap a sombie child
-        sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
-        deletejob(&jobs,child_pid);
-        sigprocmask(SIG_SETMASK,&prev_all,NULL);
+    //printf("reap the zombieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n");
+    if((child_pid = waitpid(-1,&status,WNOHANG))>0){
+        //Reap a sombie child if child is terminated
+       // if(!WIFSTOPPED(status))
+        {
+            sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
+            deletejob(&jobs,child_pid);
+            sigprocmask(SIG_SETMASK,&prev_all,NULL);
+        }
     }
+    //printf("sigchld received,the sending child_pid is: %d\n",child_pid);
     errno = olderrno;
     return;
 }
@@ -392,6 +438,7 @@ void sigint_handler(int sig)
     signal_received = sig;
     sigfillset(&mask_all);
     sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
+    //printf("interrupt handler**************************************!\n");
     child_pid = fgpid(&jobs);
     if(child_pid) 
     {
@@ -417,6 +464,7 @@ void sigtstp_handler(int sig)
     sigfillset(&mask_all);
     sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
     child_pid = fgpid(&jobs);
+    //printf("signal stop received,stop pid%d\n",child_pid);
     if(child_pid) 
     {
        kill(-child_pid,SIGTSTP); 
@@ -560,7 +608,7 @@ int pid2jid(pid_t pid)
 void listjobs(struct job_t *jobs) 
 {
     int i;
-    
+    //printf("list jobs \n"); 
     for (i = 0; i < MAXJOBS; i++) {
 	if (jobs[i].pid != 0) {
 	    printf("[%d] (%d) ", jobs[i].jid, jobs[i].pid);

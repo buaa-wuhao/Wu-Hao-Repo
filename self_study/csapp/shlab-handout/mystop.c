@@ -26,8 +26,10 @@ int main(int argc, char **argv)
     for (i=0; i < secs; i++)
        sleep(1);
 	
+    //getpid() return your current process ID where this main function
+    //is executed in.
     pid = getpid(); 
-
+    printf("The parent pid is:%d \n",pid);
     if (kill(-pid, SIGTSTP) < 0)
        fprintf(stderr, "kill (tstp) error");
 
