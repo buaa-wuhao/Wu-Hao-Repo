@@ -41,6 +41,8 @@ int verbose = 0;            /* if true, print additional output */
 int nextjid = 1;            /* next job ID to allocate */
 char sbuf[MAXLINE];         /* for composing sprintf messages */
 int  bg;                    /*if it is background command,1:background,0:foreground*/
+int  global_job_id;         /*Store the job id which either terminated or stopped,causing
+                             sig_child is received by the main loop*/
 
 struct job_t {              /* The job struct */
     pid_t pid;              /* job PID */
@@ -218,10 +220,12 @@ void eval(char *cmdline)
             switch(signal_received)
             {
                 case SIGINT:
-                    printf("Job [%d] (%d) terminated by signal 2\n",pid2jid(child_pid),child_pid);
+                    //printf("Job [%d] (%d) terminated by signal 2\n",pid2jid(child_pid),child_pid);
+                    printf("Job [%d] (%d) terminated by signal 2\n",global_job_id,child_pid);
                     break;
                 case SIGTSTP:
-                    printf("Job [%d] (%d) stopped by signal 20\n",pid2jid(child_pid),child_pid);
+                    //printf("Job [%d] (%d) stopped by signal 20\n",pid2jid(child_pid),child_pid);
+                    printf("Job [%d] (%d) stopped by signal 20\n",global_job_id,child_pid);
                     break;
                 default:
             //        printf("unknown signal received:[%d],its sending pid is: [%d]\n",signal_received,child_pid);
@@ -410,16 +414,39 @@ void sigchld_handler(int sig)
     int olderrno = errno,status;
     sigset_t mask_all, prev_all;
     signal_received = sig;
+    struct job_t* ptr_job = NULL;
     sigfillset(&mask_all);
     //printf("reap the zombieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n");
-    if((child_pid = waitpid(-1,&status,WNOHANG))>0){
-        //Reap a sombie child if child is terminated
-       // if(!WIFSTOPPED(status))
-        {
-            sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
-            deletejob(&jobs,child_pid);
-            sigprocmask(SIG_SETMASK,&prev_all,NULL);
-        }
+    //waitpid will return if child process either terminated or stopped(WUNTRACED flg)
+    //if child process terminated, waitpid will reap it.
+    child_pid = waitpid(-1,&status,WNOHANG | WUNTRACED);
+    /*For trace16 file, when child process is dead because of interrupt signal(interrupt signal is sent 
+      to child process,parent process(tsh process) will not reveice this interrupt signal)
+      the child process will be removed from jobs_list here.In the same time,
+      main loop still needs to display this child process's death is caused by 
+      interrupt signal,needs to display the job id of this child process.But 
+      job information already is removed from jobs_list.So use this global variable
+      global_job_id to transfer this already deleted information to main loop, so that
+      main loop still could display its job_id.
+      
+      If the interrupt signal is sent to our shell directly,this is not a problem, because
+      when interrupt signal was sent to our shell, interrupt signal handler will be called first
+      which will cause main loop comes out of sleep and display the going to be deleted process information
+      then,sigchld_handler will be called after that.*/
+    global_job_id = pid2jid(child_pid);
+    if(WIFEXITED(status) || WIFSIGNALED(status))
+    {
+        sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
+        deletejob(&jobs,child_pid);
+        sigprocmask(SIG_SETMASK,&prev_all,NULL);
+    }
+    if(WIFSIGNALED(status)){
+        signal_received = WTERMSIG(status);
+    }
+    if(WIFSTOPPED(status)){
+        ptr_job = getjobpid(&jobs,child_pid);
+        ptr_job->state = ST;
+        signal_received = WSTOPSIG(status);
     }
     //printf("sigchld received,the sending child_pid is: %d\n",child_pid);
     errno = olderrno;
@@ -440,10 +467,15 @@ void sigint_handler(int sig)
     sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
     //printf("interrupt handler**************************************!\n");
     child_pid = fgpid(&jobs);
+    //global_job_id = pid2jid(child_pid);
     if(child_pid) 
     {
        kill(-child_pid,SIGINT); 
-       deletejob(&jobs,child_pid);
+       //forece foreground PID to 0 to make main loop stay in the while loop of sigsuspend.
+       //it will come out of while loop of sigsuspend when sigchld_handler is called when
+       //child process state changes.
+       child_pid = 0;
+       //deletejob(&jobs,child_pid);
     }
     sigprocmask(SIG_SETMASK,&prev_all,NULL);
     errno = olderrno;
@@ -459,7 +491,7 @@ void sigtstp_handler(int sig)
 {
     int olderrno = errno;
     sigset_t mask_all, prev_all;
-    struct job_t* ptr_job;
+    //struct job_t* ptr_job;
     signal_received = sig;
     sigfillset(&mask_all);
     sigprocmask(SIG_BLOCK,&mask_all,&prev_all);
@@ -468,8 +500,21 @@ void sigtstp_handler(int sig)
     if(child_pid) 
     {
        kill(-child_pid,SIGTSTP); 
-       ptr_job = getjobpid(&jobs,child_pid);
-       ptr_job->state = ST;
+       //when Ctrl+z is pressed in tsh shell,tsh will receive two signals
+       //1.SIGTSTP and 2.SIGCHLD.
+       //sigtstp_handler will be called first, then since this handler send kill signal
+       //to child process,so sigchld_handler will be called secondly when child process
+       //either terminated or state changed to stop.
+       //when sigstp_handler is called,force child_pid(foreground process group ID) to zero
+       //So, in the main loop, it will stays in the while loop of sigsuspend();
+       //Everything is handled only after sigchld_handler is called. because calling of
+       //sigchld_handler means states of child process has changed. Main loop will come out of
+       //while loop of sigsuspend(), when sicchld_handler is called.
+       // sigchild_handler is the main and the only entry to handle child process death or stopped
+       
+       child_pid = 0;
+       //ptr_job = getjobpid(&jobs,child_pid);
+       //ptr_job->state = ST;
     }
     sigprocmask(SIG_SETMASK,&prev_all,NULL);
     errno = olderrno;
